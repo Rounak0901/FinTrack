@@ -44,7 +44,8 @@ export async function createAccount(data) {
       // update other accounts as not default
       await db.account.updateMany({
         where: {
-          userId: userId,
+          userId: user.id,
+          isDefault: true,
         },
         data: {
           isDefault: false,
@@ -56,7 +57,7 @@ export async function createAccount(data) {
       data: {
         ...data,
         balance: balanceFloat,
-        isDefault: shouldBeDefault,
+        userId: user.id,
         balance: balanceFloat,
       },
     });
