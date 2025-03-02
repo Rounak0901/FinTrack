@@ -9,7 +9,7 @@ const serializeTransaction = (obj) => {
     serialized.balance = obj.balance.toNumber();
   }
   if (obj.amount) {
-    serialized.amount = obj.balance.toNumber();
+    serialized.amount = obj.amount.toNumber();
   }
 
   return serialized;
@@ -51,4 +51,40 @@ export async function updateDefaultAccount(accountId) {
   } catch (error) {
     return { success: false, error: error.message };
   }
+}
+
+export async function getAccountWithTransactions(accountId) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const user = await db.user.findUnique({
+    where: { clerkUserId: userId },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  const account = await db.account.findUnique({
+    where: {
+      id: accountId,
+      userId: user.id,
+    },
+    include: {
+      transactions: {
+        orderBy: { date: "desc" },
+      },
+      _count: {
+        select: { transactions: true },
+      },
+    },
+  });
+  if (!account) return null;
+
+  // Construct the final response object:
+  //   - Serialize the account details using the 'serializeTransaction' function.
+  //   - Map over the transactions array to serialize each transaction using the 'serializeTransaction' function.
+  //   - return object with account serialized and array of transactions serialized.
+  return {
+    ...serializeTransaction(account),
+    transactions: account.transactions.map(serializeTransaction),
+  };
 }
