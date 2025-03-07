@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { format, set } from "date-fns";
+import { format } from "date-fns";
 import { categoryColors } from "@/data/categories";
 import {
   Tooltip,
@@ -66,7 +66,52 @@ const TransactionsTable = ({ transactions }) => {
   const [typeFilter, setTypeFilter] = useState("");
   const [recurringFilter, setRecurringFilter] = useState("");
 
-  const filteredAndSortedTransactions = transactions;
+  const filteredAndSortedTransactions = useMemo(() => {
+    let res = [...transactions];
+
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      res = res.filter(
+        (transaction) =>
+          transaction.description.toLowerCase().includes(searchLower) ||
+          transaction.category.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (recurringFilter) {
+      res = res.filter(
+        (transaction) =>
+          (recurringFilter === "RECURRING" && transaction.isRecurring) ||
+          (recurringFilter === "NON-RECURRING" && !transaction.isRecurring)
+      );
+    }
+
+    if (typeFilter) {
+      res = res.filter((transaction) => transaction.type === typeFilter);
+    }
+
+    // Apply sorting
+    res.sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortConfig.field) {
+        case "date":
+          comparison = new Date(a.date) - new Date(b.date);
+          break;
+        case "amount":
+          comparison = a.amount - b.amount;
+          break;
+        case "category":
+          comparison = a.category.localeCompare(b.category);
+        default:
+          break;
+      }
+
+      return sortConfig.direction === "desc" ? comparison * -1 : comparison;
+    });
+
+    return res;
+  }, [transactions, searchTerm, typeFilter, recurringFilter, sortConfig]);
 
   const handleSort = (field) => {
     setSortConfig((sc) => ({
@@ -89,7 +134,7 @@ const TransactionsTable = ({ transactions }) => {
     );
   };
 
-  const handleBulkDelete = () => {};
+  const handleBulkDelete = () => {}; //TODO: Implement this method
   const handleClearFilters = () => {
     setSearchTerm("");
     setTypeFilter("");
@@ -124,7 +169,7 @@ const TransactionsTable = ({ transactions }) => {
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="All Types" className="" />
+              <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="INCOME">Income</SelectItem>
