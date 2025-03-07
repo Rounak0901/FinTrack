@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -47,6 +47,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import useFetch from "@/hooks/use-fetch";
+import { bulkDeleteTransactions } from "@/actions/accounts";
+import { toast } from "sonner";
+import { BarLoader } from "react-spinners";
 
 const RECURRING_INTERVALS = {
   DAILY: "Daily",
@@ -65,6 +69,12 @@ const TransactionsTable = ({ transactions }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [recurringFilter, setRecurringFilter] = useState("");
+
+  const {
+    loading: deleteLoading,
+    fn: deleteFn,
+    data: deleted,
+  } = useFetch(bulkDeleteTransactions);
 
   const filteredAndSortedTransactions = useMemo(() => {
     let res = [...transactions];
@@ -134,7 +144,27 @@ const TransactionsTable = ({ transactions }) => {
     );
   };
 
-  const handleBulkDelete = () => {}; //TODO: Implement this method
+  const handleBulkDelete = async () => {
+    const confirmation = window.confirm(
+      `Are you sure you want to delete ${selectedIds.length} transaction${
+        selectedIds.length > 1 ? "s" : ""
+      }?`
+    );
+
+    if (!confirmation) {
+      toast.info("Deletion cancelled.");
+      return;
+    }
+    if (selectedIds.length > 0) {
+      toast.promise(deleteFn(selectedIds), {
+        loading: "Deleting transaction...",
+        success: "Transactions deleted successfully",
+        error: "Error while deleting transactions",
+      });
+    }
+    deleteFn(selectedIds);
+  };
+
   const handleClearFilters = () => {
     setSearchTerm("");
     setTypeFilter("");
@@ -142,12 +172,11 @@ const TransactionsTable = ({ transactions }) => {
     setSelectedIds([]);
   };
 
-  const deleteTransaction = (transactionID) => {
-    console.log(`${transactionID} deleted`);
-  };
-
   return (
     <div className="space-y-4">
+      {deleteLoading && (
+        <BarLoader className="mt-4" width={"100%"} color="#9333ea" />
+      )}
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -200,7 +229,7 @@ const TransactionsTable = ({ transactions }) => {
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => handleBulkDelete()}
+                onClick={handleBulkDelete}
               >
                 <Trash className="h-4 w-4 mr-2" />
                 Delete Selected ({selectedIds.length})
@@ -381,7 +410,7 @@ const TransactionsTable = ({ transactions }) => {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive"
-                          onClick={() => deleteTransaction(transaction.id)}
+                          onClick={() => deleteFn([transaction.id])}
                         >
                           Delete
                         </DropdownMenuItem>
