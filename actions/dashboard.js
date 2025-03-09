@@ -4,6 +4,19 @@ import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
+async function authenticateUser() {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unautorized user");
+
+  const user = await db.user.findUnique({
+    where: { clerkUserId: userId },
+  });
+
+  if (!user) throw new "User not found"();
+
+  return user;
+}
+
 const serializedTransaction = (obj) => {
   const serialized = { ...obj };
   if (obj.balance) {
@@ -113,6 +126,24 @@ export async function getUserAccounts() {
 
     const serializedAccounts = accounts.map(serializedTransaction);
     return serializedAccounts;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function getDashboardData() {
+  try {
+    const user = await authenticateUser();
+    const transactions = await db.transaction.findMany({
+      where: {
+        userId: user.id,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return transactions.map(serializedTransaction);
   } catch (error) {
     throw new Error(error.message);
   }
