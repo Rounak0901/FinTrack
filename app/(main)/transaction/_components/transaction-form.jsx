@@ -31,6 +31,7 @@ import CreateAccountDrawer from "@/components/create-account-drawer";
 import { transactionSchema } from "@/app/lib/schema";
 import { TRANSACTION_RECURRING_TYPE } from "@/data/enums";
 import { TRANSACTION_TYPE } from "@/data/enums";
+import { ReceiptScanner } from "./receipt_scanner";
 
 export function AddTransactionForm({
   accounts,
@@ -67,7 +68,7 @@ export function AddTransactionForm({
             }),
           }
         : {
-            type: TRANSACTION_TYPE.EXPENSE,
+            type: TRANSACTION_TYPE[1],
             amount: "",
             description: "",
             accountId: accounts.find((ac) => ac.isDefault)?.id,
@@ -107,19 +108,18 @@ export function AddTransactionForm({
     }
   }, [transactionResult, transactionLoading, editMode]);
 
-  // const handleScanComplete = (scannedData) => {
-  //   if (scannedData) {
-  //     setValue("amount", scannedData.amount.toString());
-  //     setValue("date", new Date(scannedData.date));
-  //     if (scannedData.description) {
-  //       setValue("description", scannedData.description);
-  //     }
-  //     if (scannedData.category) {
-  //       setValue("category", scannedData.category);
-  //     }
-  //     toast.success("Receipt scanned successfully");
-  //   }
-  // };
+  const handleScanComplete = (scannedData) => {
+    if (scannedData) {
+      setValue("amount", scannedData.amount.toString());
+      setValue("date", new Date(scannedData.date));
+      if (scannedData.description) {
+        setValue("description", scannedData.description);
+      }
+      if (scannedData.category) {
+        setValue("category", scannedData.category.toLowerCase());
+      }
+    }
+  };
 
   const type = watch("type");
   const isRecurring = watch("isRecurring");
@@ -132,7 +132,7 @@ export function AddTransactionForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Receipt Scanner - Only show in create mode */}
-      {/* {!editMode && <ReceiptScanner onScanComplete={handleScanComplete} />} */}
+      {!editMode && <ReceiptScanner onScanComplete={handleScanComplete} />}
 
       {/* Type */}
       <div className="space-y-2">
@@ -209,6 +209,7 @@ export function AddTransactionForm({
         <Select
           onValueChange={(value) => setValue("category", value)}
           defaultValue={getValues("category")}
+          value={getValues("category")}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select category" />
