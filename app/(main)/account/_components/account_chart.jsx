@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 const DATE_RANGES = {
   "7D": { label: "Last 7 Days", days: 7 },
@@ -119,6 +120,7 @@ const AccountChart = ({ transactions }) => {
             </p>
           </div>
         </div>
+        <Separator className="my-4 mb-9" />
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
