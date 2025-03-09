@@ -21,6 +21,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   Clock,
   MoreHorizontal,
@@ -51,13 +53,9 @@ import useFetch from "@/hooks/use-fetch";
 import { bulkDeleteTransactions } from "@/actions/accounts";
 import { toast } from "sonner";
 import { BarLoader } from "react-spinners";
+import { TRANSACTION_RECURRING_TYPE } from "@/data/enums";
 
-const RECURRING_INTERVALS = {
-  DAILY: "Daily",
-  WEEKLY: "Weekly",
-  MONTHLY: "Monthly",
-  YEARLY: "Yearly",
-};
+const RECURRING_INTERVALS = TRANSACTION_RECURRING_TYPE;
 
 const TransactionsTable = ({ transactions }) => {
   const router = useRouter();
@@ -122,6 +120,18 @@ const TransactionsTable = ({ transactions }) => {
 
     return res;
   }, [transactions, searchTerm, typeFilter, recurringFilter, sortConfig]);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const transactionsPerPage = 10;
+  const totalPages = Math.ceil(
+    filteredAndSortedTransactions.length / transactionsPerPage
+  );
+  const paginatedTransactions = useMemo(() => {
+    const startIndex = (currentPage - 1) * transactionsPerPage;
+    const endIndex = startIndex + transactionsPerPage;
+    return filteredAndSortedTransactions.slice(startIndex, endIndex);
+  }, [currentPage, filteredAndSortedTransactions]);
 
   const handleSort = (field) => {
     setSortConfig((sc) => ({
@@ -252,7 +262,6 @@ const TransactionsTable = ({ transactions }) => {
       {/* Transactions */}
       <div className="rounded-md border">
         <Table>
-          <TableCaption>A list of your recent transactions.</TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">
@@ -313,7 +322,7 @@ const TransactionsTable = ({ transactions }) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAndSortedTransactions.length === 0 ? (
+            {paginatedTransactions.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={7}
@@ -323,7 +332,7 @@ const TransactionsTable = ({ transactions }) => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredAndSortedTransactions.map((transaction) => (
+              paginatedTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell className="font-medium">
                     <Checkbox
@@ -423,6 +432,29 @@ const TransactionsTable = ({ transactions }) => {
           </TableBody>
         </Table>
       </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setCurrentPage((p) => p - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setCurrentPage((p) => p + 1)}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
