@@ -1,10 +1,4 @@
-import {
-  SignInButton,
-  SignedOut,
-  SignUpButton,
-  SignedIn,
-  UserButton,
-} from "@clerk/nextjs";
+import { SignInButton, SignedOut, SignedIn, UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
@@ -19,8 +13,8 @@ const Header = async () => {
       <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link href="/">
           <Image
-            src={"next.svg"}
-            alt={"nextjs logo"}
+            src={"/logo.png"}
+            alt={"FinTrack logo"}
             height={60}
             width={200}
             className="h-12 w-auto object-contain"
